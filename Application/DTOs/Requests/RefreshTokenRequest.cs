@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.DTOs
+namespace Application.DTOs.Requests
 {
-    public class RefreshTokenRequestDto
+    public class RefreshTokenRequest
     {
         public string RefreshToken { get; set; }
     }

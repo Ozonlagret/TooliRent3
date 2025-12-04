@@ -1,4 +1,5 @@
 ﻿using Domain.Models;
+using Application.Services;
 using Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
@@ -10,16 +11,20 @@ namespace Presentation.Controllers
     [Route("[controller]")]
     public class AuthController : ControllerBase
     {
+        private readonly AuthService _authService;
         private readonly UserManager<IdentityUser> _userManager;
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly TooliRentDbContext _dbContext;
         private readonly IConfiguration _config;
 
-        public AuthController(UserManager<IdentityUser> userManager,
+        public AuthController(
+            AuthService authService,
+            UserManager<IdentityUser> userManager,
             SignInManager<IdentityUser> signInManager,
             TooliRentDbContext dbContext,
             IConfiguration config)
         {
+            _authService = authService;
             _userManager = userManager;
             _signInManager = signInManager;
             _dbContext = dbContext;
@@ -48,7 +53,7 @@ namespace Presentation.Controllers
             if (user == null || !await _userManager.CheckPasswordAsync(user, dto.Password))
                 return Unauthorized("Invalid credentials.");
 
-            var accessToken = await GenerateJwtToken(user);
+            var accessToken = await _authService.GenerateJwtToken(user);
             var refreshToken = await CreateAndSaveRefreshTokenAsync(user.Id);
 
             return Ok(new { accessToken, refreshToken });

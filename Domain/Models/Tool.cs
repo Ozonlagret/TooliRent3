@@ -18,6 +18,8 @@ namespace Domain.Models
         public ToolCategory ToolCategory { get; set; } = null!;
         public ToolStatus Status { get; set; }
 
+        public ToolAvailability Availability { get; set; }
+
         public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
     }
 }
