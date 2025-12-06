@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Domain.Models;
 
 namespace Application.Services
 {
@@ -18,6 +19,12 @@ namespace Application.Services
                     return (false, "Some tools are already booked for the selected period.", overlappingTools);
                 }
             }
+        }
+
+        public async Task<IEnumerable<Booking>> GetBookingsAsync(string userId)
+        {
+            var bookings = await _bookingRepository.GetBookingsByUserIdAsync(userId);
+            return bookings;
         }
     }
 }

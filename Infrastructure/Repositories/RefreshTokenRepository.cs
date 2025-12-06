@@ -34,5 +34,19 @@ namespace Infrastructure.Repositories
                 .OrderByDescending(rt => rt.Created)
                 .FirstOrDefaultAsync();
         }
+
+        public async Task UpdateAsync(RefreshToken refreshToken)
+        {
+            var existingToken = await _dbContext.RefreshTokens.FindAsync(refreshToken.Id);
+            if (existingToken != null)
+            {
+                _dbContext.Entry(existingToken).CurrentValues.SetValues(refreshToken);
+            }
+        }
+
+        public async Task SaveChangesAsync()
+        {
+            await _dbContext.SaveChangesAsync();
+        }
     }
 }

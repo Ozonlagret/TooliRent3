@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Application.DTOs.Responses;
 using Application.Interfaces.Service;
+using Application.Interfaces.Repository;
 
 namespace Application.Services
 {
@@ -59,6 +60,30 @@ namespace Application.Services
                 return new AuthResponse { IsSuccess = false, Errors = errors };
             }
             await _userManager.AddToRoleAsync(user, "Member");
+            return new AuthResponse { IsSuccess = true };
+        }
+
+        public async Task<AuthResponse> LoginAsync(string userName, string password)
+        {
+            var user = await _userManager.FindByNameAsync(userName);
+            if (user == null || !await _userManager.CheckPasswordAsync(user, password))
+            {
+                return new AuthResponse { IsSuccess = false, Errors = new List<string> { "Invalid username or password." } };
+            }
+            var token = await GenerateJwtToken(user);
+            return new AuthResponse { IsSuccess = true, Token = token };
+        }
+
+        public async Task<AuthResponse> RevokeRefreshToken(string userId)
+        {
+            var refreshToken = await _refreshTokenRepository.GetByUserIdAsync(userId);
+            if (refreshToken == null)
+            {
+                return new AuthResponse { IsSuccess = false, Errors = new List<string> { "No valid refresh token found." } };
+            }
+            refreshToken.IsRevoked = true;
+            await _refreshTokenRepository.UpdateAsync(refreshToken);
+            await _refreshTokenRepository.SaveChangesAsync();
             return new AuthResponse { IsSuccess = true };
         }
     }

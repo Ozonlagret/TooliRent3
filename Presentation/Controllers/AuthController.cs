@@ -4,6 +4,7 @@ using Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
+using Application.DTOs.Requests;
 
 namespace Presentation.Controllers
 {
@@ -32,7 +33,7 @@ namespace Presentation.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterDto dto)
+        public async Task<IActionResult> Register([FromBody] RegisterRequestDto dto)
         {
             var user = new IdentityUser { UserName = dto.UserName, Email = dto.Email };
             var result = await _userManager.CreateAsync(user, dto.Password);
@@ -47,7 +48,7 @@ namespace Presentation.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginDto dto)
+        public async Task<IActionResult> Login([FromBody] LoginRequestDto dto)
         {
             var user = await _userManager.FindByNameAsync(dto.UserName);
             if (user == null || !await _userManager.CheckPasswordAsync(user, dto.Password))

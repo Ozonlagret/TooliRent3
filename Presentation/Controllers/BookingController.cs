@@ -9,6 +9,7 @@ namespace Presentation.Controllers
         [HttpGet]
         public async Task<IActionResult> GetBookings()
         {
+            var bookings = await _bookingService.GetBookingsAsync();
 
         }
 

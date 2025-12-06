@@ -12,5 +12,7 @@ namespace Application.Interfaces.Repository
     {
         Task AddAsync(RefreshToken refreshToken);
         Task<RefreshToken?> GetByUserIdAsync(string userId);    
+        Task UpdateAsync(RefreshToken refreshToken);
+        Task SaveChangesAsync();
     }
 }
