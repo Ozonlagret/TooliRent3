@@ -20,11 +20,15 @@ namespace Infrastructure.Repositories
             _dbContext = dbContext;
         }
 
-        public async Task<IEnumerable<Tool>> GetAvailableTools()
+        public async Task<IEnumerable<Tool>> GetAvailableToolsAsync(DateTime start, DateTime end)
         {
             return await _dbContext.Tools
-                .Where(tool => tool.Availability == ToolAvailability.Available)
-                .ToListAsync();
+                .Include(t => t.ToolCategory) 
+                .Where(t => !t.Bookings.Any(b =>
+                    b.Status != BookingStatus.Cancelled &&
+                    b.EndDate > start &&
+                    b.StartDate < end))
+                    .ToListAsync();
         }
 
         public async Task<IEnumerable<Tool>> GetToolsByIdsAsync(IEnumerable<int> toolIds)
@@ -34,12 +38,6 @@ namespace Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<int>> GetOverlappingToolsAsync(IEnumerable<int> toolIds, DateTime startDate, DateTime endDate)
-        {
-            // Implementation to check for overlapping tool bookings
-            return Enumerable.Empty<int>();
-        }
-
         public async Task<Tool?> GetToolByIdWithCategoryAsync(int toolId)
         {
             return await _dbContext.Tools
@@ -47,7 +45,7 @@ namespace Infrastructure.Repositories
                 .FirstOrDefaultAsync(tool => tool.Id == toolId);
         }
 
-        public async Task<IEnumerable<Tool>> FilterToolsAsyncAsync(ToolFilterRequest filterDto)
+        public async Task<IEnumerable<Tool>> FilterToolsAsync(ToolFilterRequest filterDto)
         {
             var query = _dbContext.Tools.Include(t => t.ToolCategory).AsQueryable();
 
@@ -69,16 +67,6 @@ namespace Infrastructure.Repositories
         public async Task UpdateToolAsync(Tool tool)
         {
             _dbContext.Tools.Update(tool);
-        }
-
-        public Task<IEnumerable<Tool>> GetAvailableToolsAsync()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<IEnumerable<Tool?>> FilterToolsAsync(ToolFilterRequest filterDto)
-        {
-            throw new NotImplementedException();
         }
     }
 }

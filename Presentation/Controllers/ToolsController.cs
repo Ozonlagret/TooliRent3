@@ -1,5 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Application.Services;
 using Application.DTOs.Responses;
+using Application.Interfaces;
+using Application.DTOs.Requests;
 
 namespace Presentation.Controllers
 {
@@ -8,16 +11,26 @@ namespace Presentation.Controllers
     [Route("[controller]")]
     public class ToolsController : ControllerBase
     {
-        [HttpGet]
-        public async Task<IActionResult<AvailableToolsResponse>> GetAvailableTools()
+        private readonly ToolService _toolService;
+        private readonly IUnitOfWork _unitOfWork;
+        public ToolsController(ToolService toolService, IUnitOfWork unitOfWork)
         {
-            var tools
-            return Ok();
+            _toolService = toolService;
+            _unitOfWork = unitOfWork;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAvailableTools(DateTime start, DateTime end)
+        {
+            var tools = await _toolService.GetAvailableToolsAsync(start, end);
+            await _unitOfWork.SaveChangesAsync();
+            return Ok(tools);
         }
 
         [HttpGet("filter")]
-        public IActionResult GetFilteredTools([FromQuery] string condition, [FromQuery] decimal maxRentalPricePerDay)
+        public async Task<IActionResult> GetFilteredToolsAsync(ToolFilterRequest filterRequest)
         {
+            var tools = _toolService.FilterToolsAsync(filterRequest);
             return Ok();
         }
 

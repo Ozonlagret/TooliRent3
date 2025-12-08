@@ -10,7 +10,7 @@ namespace Application.Interfaces.Repository
 {
     public interface IToolRepository
     {
-        Task<IEnumerable<Tool>> GetAvailableToolsAsync();
+        Task<IEnumerable<Tool>> GetAvailableToolsAsync(DateTime start, DateTime end);
         Task<IEnumerable<Tool?>> FilterToolsAsync(ToolFilterRequest filterDto);
         Task<Tool?> GetToolByIdWithCategoryAsync(int toolId);
         Task UpdateToolAsync(Tool tool);

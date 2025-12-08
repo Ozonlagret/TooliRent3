@@ -3,11 +3,13 @@ using Application.DTOs.Responses;
 using Application.Interfaces.Repository;
 using Domain.Enums;
 using Domain.Models;
+using Application.DTOs.Responses;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace Application.Services
 {
@@ -20,17 +22,39 @@ namespace Application.Services
             _toolRepository=toolRepository;
         }
 
-        public async Task<IEnumerable<Tool>> GetAvailableToolsAsync()
+        public async Task<IEnumerable<AvailableToolsResponse>> GetAvailableToolsAsync(DateTime start, DateTime end)
         {
-            var tools = await _toolRepository.GetAvailableToolsAsync();
-            
-            return tools;
+            var tools = await _toolRepository.GetAvailableToolsAsync(start, end);
+
+            var results = await q.Select(t => new AvailableToolsResponse
+            {
+                Id = t.Id,
+                Name = t.Name,
+                Description = t.Description,
+                RentalPricePerDay = t.RentalPricePerDay,
+                ToolCategoryId = t.ToolCategoryId,
+                ToolCategoryName = t.ToolCategory != null ? t.ToolCategory.Name : null,
+                Status = t.Status,
+            }).ToListAsync();
+
+
+            return results;
         }
 
-        public async Task<IEnumerable<Tool?>> FilterToolsAsync(ToolFilterRequest filterDto)
+        public async Task<IEnumerable<ToolDetailsResponse?>> FilterToolsAsync(ToolFilterRequest filterDto)
         {
             var tools = await _toolRepository.FilterToolsAsync(filterDto);
-            return tools;
+
+            var results = tools.Select(t => new ToolDetailsResponse
+            {
+                Id = t.Id,
+                Name = t.Name,
+                Description = t.Description,
+                Status = t.Status.ToString(),
+                Availability = t.Availability.ToString(),
+                Category = t.ToolCategory != null ? t.ToolCategory.Name : null
+            });
+            return results;
         }
 
         public async Task<ToolDetailsResponse?> GetToolDetailsAsync(int toolId)
