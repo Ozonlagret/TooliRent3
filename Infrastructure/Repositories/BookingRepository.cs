@@ -17,6 +17,18 @@ namespace Infrastructure.Repositories
             _dbContext = dbContext;
         }
 
+        public async Task<IEnumerable<int>> GetOverlappingToolsAsync(IEnumerable<int> toolIds, System.DateTime startDate, System.DateTime endDate)
+        {
+            var overlappingToolIds = await _dbContext.Bookings
+                .Where(b => b.EndDate >= startDate && b.StartDate <= endDate)
+                .SelectMany(b => b.Tools)
+                .Where(t => toolIds.Contains(t.Id))
+                .Select(t => t.Id)
+                .Distinct()
+                .ToListAsync();
+            return overlappingToolIds;
+        }
+
         public async Task AddAsync(Booking booking)
         {
             await _dbContext.Bookings.AddAsync(booking);

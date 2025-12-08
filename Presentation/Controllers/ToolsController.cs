@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Application.DTOs.Responses;
 
 namespace Presentation.Controllers
 {
@@ -8,8 +9,9 @@ namespace Presentation.Controllers
     public class ToolsController : ControllerBase
     {
         [HttpGet]
-        public IActionResult GetAvailableTools()
+        public async Task<IActionResult<AvailableToolsResponse>> GetAvailableTools()
         {
+            var tools
             return Ok();
         }
 

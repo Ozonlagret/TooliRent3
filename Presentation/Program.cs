@@ -1,13 +1,15 @@
+using Application.Interfaces;
 using AutoMapper;
 using Domain.Models;
 using FluentValidation;
+using Infrastructure;
 using Infrastructure.Data;
 using Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.SqlServer;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace Presentation
 {
@@ -55,6 +57,8 @@ namespace Presentation
                 });
 
             var app = builder.Build();
+
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())

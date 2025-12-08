@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Application.DTOs.Requests;
+using Application.Interfaces;
 
 namespace Presentation.Controllers
 {
@@ -17,19 +18,22 @@ namespace Presentation.Controllers
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly TooliRentDbContext _dbContext;
         private readonly IConfiguration _config;
+        private readonly IUnitOfWork _unitOfWork;
 
         public AuthController(
             AuthService authService,
             UserManager<IdentityUser> userManager,
             SignInManager<IdentityUser> signInManager,
             TooliRentDbContext dbContext,
-            IConfiguration config)
+            IConfiguration config,
+            IUnitOfWork unitOfWork)
         {
             _authService = authService;
             _userManager = userManager;
             _signInManager = signInManager;
             _dbContext = dbContext;
             _config = config;
+            _unitOfWork = unitOfWork;
         }
 
         [HttpPost("register")]
@@ -43,6 +47,7 @@ namespace Presentation.Controllers
 
             // Optionally assign default role
             await _userManager.AddToRoleAsync(user, "Member");
+            await _unitOfWork.SaveChangesAsync();
 
             return Ok();
         }
@@ -84,9 +89,6 @@ namespace Presentation.Controllers
             return Ok(new { accessToken, refreshToken = newRefreshToken });
         }
 
-        [HttpPost("revoke-token")]
-        public async Task<IActionResult> RevokeToken([FromBody] RevokeTokenDto dto)
-        {
-        }
+        
     }
 }

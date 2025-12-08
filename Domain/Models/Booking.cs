@@ -1,4 +1,5 @@
-﻿using Microsoft.Identity.Client;
+﻿using Domain.Enums;
+using Microsoft.Identity.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +14,8 @@ namespace Domain.Models
         public int UserId { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
+
+        public BookingStatus Status { get; set; }
 
         public ICollection<Tool> Tools { get; set; } = new List<Tool>();
     }

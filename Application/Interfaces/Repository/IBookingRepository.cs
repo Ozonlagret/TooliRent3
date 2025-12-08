@@ -11,5 +11,7 @@ namespace Application.Interfaces.Repository
         Task AddAsync(Booking booking);
         Task UpdateAsync(Booking booking);
         Task DeleteAsync(Booking booking);
+        Task <IEnumerable<int>> GetOverlappingToolsAsync(IEnumerable<int> toolIds, System.DateTime startDate, System.DateTime endDate);
+
     }
 }
