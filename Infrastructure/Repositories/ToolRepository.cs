@@ -1,5 +1,6 @@
 ﻿using Domain.Models;
 using Domain.Enums;
+using Domain.Filters;
 using Application.DTOs.Requests;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -23,12 +24,10 @@ namespace Infrastructure.Repositories
         public async Task<IEnumerable<Tool>> GetAvailableToolsAsync(DateTime start, DateTime end)
         {
             return await _dbContext.Tools
-                .Include(t => t.ToolCategory) 
-                .Where(t => !t.Bookings.Any(b =>
-                    b.Status != BookingStatus.Cancelled &&
-                    b.EndDate > start &&
-                    b.StartDate < end))
-                    .ToListAsync();
+                .Include(t => t.ToolCategory)
+                .Where(t => t.Availability == ToolAvailability.Available
+                         && t.Status == ToolStatus.Operational)
+                .ToListAsync();
         }
 
         public async Task<IEnumerable<Tool>> GetToolsByIdsAsync(IEnumerable<int> toolIds)
@@ -45,21 +44,21 @@ namespace Infrastructure.Repositories
                 .FirstOrDefaultAsync(tool => tool.Id == toolId);
         }
 
-        public async Task<IEnumerable<Tool>> FilterToolsAsync(ToolFilterRequest filterDto)
+        public async Task<IEnumerable<Tool>> FilterToolsAsync(ToolFilter filter)
         {
             var query = _dbContext.Tools.Include(t => t.ToolCategory).AsQueryable();
 
-            if (!string.IsNullOrEmpty(filterDto.CategoryName))
-                query = query.Where(tool => tool.ToolCategory.Name == filterDto.CategoryName);
+            if (filter.CategoryId.HasValue)
+                query = query.Where(tool => tool.ToolCategory.Id == filter.CategoryId);
 
-            if (!string.IsNullOrEmpty(filterDto.Name))
-                query = query.Where(tool => tool.Name == filterDto.Name);
+            if (filter.ToolId.HasValue)
+                query = query.Where(tool => tool.Id == filter.ToolId);
 
-            if (filterDto.Status != null)
-                query = query.Where(tool => tool.Status == filterDto.Status);
+            if (filter.Status != null)
+                query = query.Where(tool => tool.Status == filter.Status);
 
-            if (filterDto.Availability != null)
-                query = query.Where(tool => tool.Availability == filterDto.Availability);
+            if (filter.Availability != null)
+                query = query.Where(tool => tool.Availability == filter.Availability);
 
             return await query.ToListAsync();
         }
@@ -67,6 +66,44 @@ namespace Infrastructure.Repositories
         public async Task UpdateToolAsync(Tool tool)
         {
             _dbContext.Tools.Update(tool);
+        }
+
+        public async Task<IEnumerable<Tool>> GetAllAsync()
+        {
+            return await _dbContext.Tools
+                .Include(tool => tool.ToolCategory)
+                .ToListAsync();
+        }
+
+        public async Task<Tool?> GetByIdAsync(int id)
+        {
+            return await _dbContext.Tools
+                .Include(t => t.ToolCategory)
+                .FirstOrDefaultAsync(tool => tool.Id == id);
+        }
+
+        public async Task<Tool> AddAsync(Tool tool)
+        {
+            await _dbContext.Tools.AddAsync(tool);
+            return tool;
+        }
+
+
+        public async Task DeleteAsync(Tool tool)
+        {
+            _dbContext.Tools.Remove(tool);
+        }
+
+        public async Task<bool> ExistsAsync(int id)
+        {
+            return await _dbContext.Tools.AnyAsync(tool => tool.Id == id);
+        }
+
+        public async Task<IEnumerable<Tool>> GetAllToolsWithStatisticsAsync()
+        {
+            return await _dbContext.Tools
+                .Include(t => t.Bookings)
+                .ToListAsync();
         }
     }
 }

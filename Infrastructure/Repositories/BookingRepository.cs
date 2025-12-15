@@ -17,18 +17,6 @@ namespace Infrastructure.Repositories
             _dbContext = dbContext;
         }
 
-        public async Task<IEnumerable<int>> GetOverlappingToolsAsync(IEnumerable<int> toolIds, System.DateTime startDate, System.DateTime endDate)
-        {
-            var overlappingToolIds = await _dbContext.Bookings
-                .Where(b => b.EndDate >= startDate && b.StartDate <= endDate)
-                .SelectMany(b => b.Tools)
-                .Where(t => toolIds.Contains(t.Id))
-                .Select(t => t.Id)
-                .Distinct()
-                .ToListAsync();
-            return overlappingToolIds;
-        }
-
         public async Task AddAsync(Booking booking)
         {
             await _dbContext.Bookings.AddAsync(booking);
@@ -47,13 +35,10 @@ namespace Infrastructure.Repositories
                 .FirstOrDefaultAsync(b => b.Id == id);
         }
 
-        public async Task<IEnumerable<Booking>> GetByUserIdAsync(string userId)
+        public async Task<IEnumerable<Booking>> GetBookingsByUserIdAsync(string userId)
         {
-            if (!int.TryParse(userId, out var parsedUserId))
-                return Enumerable.Empty<Booking>();
-
             return await _dbContext.Bookings
-                .Where(b => b.UserId == parsedUserId)
+                .Where(b => b.UserId == userId)
                 .Include(b => b.Tools)
                 .ToListAsync();
         }

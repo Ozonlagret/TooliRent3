@@ -15,6 +15,6 @@ namespace Application.DTOs.Responses
         public decimal RentalPricePerDay { get; set; }
         public int ToolCategoryId { get; set; }
         public string? ToolCategoryName { get; set; }
-        public ToolStatus Status { get; set; }
+        public string? Status { get; set; }
     }
 }

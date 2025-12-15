@@ -35,6 +35,12 @@ namespace Infrastructure.Repositories
                 .FirstOrDefaultAsync();
         }
 
+        public async Task<RefreshToken?> GetByTokenAsync(string token)
+        {
+            return await _dbContext.RefreshTokens
+                .FirstOrDefaultAsync(rt => rt.Token == token);
+        }
+
         public async Task UpdateAsync(RefreshToken refreshToken)
         {
             var existingToken = await _dbContext.RefreshTokens.FindAsync(refreshToken.Id);

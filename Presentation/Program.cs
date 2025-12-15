@@ -1,15 +1,20 @@
 using Application.Interfaces;
-using AutoMapper;
+using Application.Interfaces.Repository;
+using Application.Services;
+using Application.Authorization;
 using Domain.Models;
+using Application.Interfaces.Service;
 using FluentValidation;
 using Infrastructure;
 using Infrastructure.Data;
-using Infrastructure.Data;
+using Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.SqlServer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Presentation
 {
@@ -22,6 +27,7 @@ namespace Presentation
             // Add services to the container.
 
             builder.Services.AddControllers();
+            
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
@@ -30,15 +36,10 @@ namespace Presentation
             builder.Services.AddDbContext<TooliRentDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            builder.Services.AddIdentity<IdentityUser, IdentityRole>()
+            builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
                 .AddEntityFrameworkStores<TooliRentDbContext>()
                 .AddDefaultTokenProviders();
 
-            // FluentValidation
-            builder.Services.AddValidatorsFromAssemblyContaining<Program>();
-
-            // AutoMapper
-            builder.Services.AddAutoMapper(typeof(Program).Assembly);
 
             // JWT Bearer Authentication
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -56,9 +57,35 @@ namespace Presentation
                     };
                 });
 
-            var app = builder.Build();
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
 
+                options.AddPolicy("ActiveValidUser", policy =>
+                {
+                    policy.RequireClaim(ClaimTypes.NameIdentifier);
+                    policy.AddRequirements(new ActiveUserRequirement());
+                });
+            });
+
+            // Register UnitOfWork
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+            // Register Repositories
+            builder.Services.AddScoped<IToolRepository, ToolRepository>();
+            builder.Services.AddScoped<IBookingRepository, BookingRepository>();
+            builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+            builder.Services.AddScoped<IToolCategoryRepository, ToolCategoryRepository>();
+
+            // Register Services
+            builder.Services.AddScoped<AuthService>();
+            builder.Services.AddScoped<ToolService>();
+            builder.Services.AddScoped<BookingService>();
+            builder.Services.AddScoped<ToolCategoryService>();
+            // for authorizing active users
+            builder.Services.AddScoped<IAuthorizationHandler, ActiveUserHandler>();
+
+            var app = builder.Build();
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
@@ -69,10 +96,25 @@ namespace Presentation
 
             app.UseHttpsRedirection();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
-
             app.MapControllers();
+
+            // Seed Data
+            using (var scope = app.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                try
+                {
+                    Infrastructure.Data.SeedData.Initialize(services);
+                }
+                catch (Exception ex)
+                {
+                    var logger = services.GetRequiredService<ILogger<Program>>();
+                    logger.LogError(ex, "An error occurred while seeding the database.");
+                }
+            }
 
             app.Run();
         }

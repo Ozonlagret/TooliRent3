@@ -9,9 +9,9 @@ namespace Application.DTOs.Requests
 {
     public class ToolFilterRequest
     {
-        public string? CategoryName { get; set; }
-        public string? Name { get; set; }
-        public ToolStatus? Status { get; set; }
-        public ToolAvailability Availability { get; set; }
+        public int? ToolId { get; set; }
+        public int? CategoryId { get; set; }
+        public string? Status { get; set; }
+        public string? Availability { get; set; }
     }
 }

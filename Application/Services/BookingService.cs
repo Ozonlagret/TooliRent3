@@ -1,10 +1,12 @@
 ﻿using System;
+using Domain.Enums;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Domain.Models;
 using Application.DTOs.Requests;
+using Application.DTOs.Responses;
 using Application.Interfaces.Repository;
 
 namespace Application.Services
@@ -20,30 +22,27 @@ namespace Application.Services
             _toolRepository = toolRepository;
         }
 
-        public async Task<(bool Success, string? Message, IEnumerable<int>? OverlappingToolIds)> BookToolsAsync(BookToolsRequest dto)
+        public async Task<(bool Success, string? Message, BookingsWithStatusResponse? Booking, IEnumerable<int>? OverlappingToolIds)> BookToolsAsync(BookToolsRequest dto)
         {
             var tools = await _toolRepository.GetToolsByIdsAsync(dto.ToolIds);
 
-            var unavailableToolIds = tools
-                .Where(tool => tool.Availability != Domain.Enums.ToolAvailability.Available)
+            var unavailableTools = tools
+                .Where(tool => tool.Availability != ToolAvailability.Available 
+                            || tool.Status != ToolStatus.Operational)
                 .Select(tool => tool.Id)
                 .ToList();
 
-            if (unavailableToolIds.Any())
+            if (unavailableTools.Any())
             {
-                return (false, "Some tools are not available.", unavailableToolIds);
-            }
-
-            var overlappingTools = await _bookingRepository.GetOverlappingToolsAsync(dto.ToolIds, dto.StartDate, dto.EndDate);
-            if (overlappingTools.Any())
-            {
-                return (false, "Some tools are already booked for the selected period.", overlappingTools);
+                return (false, "Some tools are not available for booking.", null, unavailableTools);
             }
 
             var booking = new Booking
             {
+                UserId = dto.UserId,
                 StartDate = dto.StartDate,
                 EndDate = dto.EndDate,
+                Status = BookingStatus.Reserved,
                 Tools = tools.ToList()
             };
 
@@ -51,17 +50,144 @@ namespace Application.Services
 
             foreach (var tool in tools)
             {
-                tool.Availability = Domain.Enums.ToolAvailability.Rented;
+                tool.Availability = ToolAvailability.Reserved;
                 await _toolRepository.UpdateToolAsync(tool);
             }
 
-            return (true, "Booking successful.", null);
+            var response = new BookingsWithStatusResponse
+            {
+                BookingId = booking.Id,
+                Status = "Reserved",
+                from = booking.StartDate,
+                to = booking.EndDate,
+                Tools = tools.Select(t => t.Name).ToArray()
+            };
+
+            return (true, "Booking successful.", response, null);
         }
 
-        public async Task<IEnumerable<Booking>> GetBookingsAsync(string userId)
+        public async Task<IEnumerable<BookingsWithStatusResponse>> GetBookingsAsync(string userId)
         {
             var bookings = await _bookingRepository.GetBookingsByUserIdAsync(userId);
-            return bookings;
+
+            var bookingsWithStatus = bookings.Select(b => new BookingsWithStatusResponse
+            {
+                BookingId = b.Id,
+                Status = b.Status.ToString(),
+                from = b.StartDate,
+                to = b.EndDate,
+                Tools = b.Tools.Select(t => t.Name).ToArray()
+            });
+
+            return bookingsWithStatus;
+        }
+
+        public async Task<string> CancelBookingAsync(int bookingId)
+        {
+            var booking = await _bookingRepository.GetByIdAsync(bookingId);
+            if (booking == null)
+            {
+                return "Booking not found.";
+            }
+            
+            foreach (var tool in booking.Tools)
+            {
+                if (tool.Status == ToolStatus.Operational)
+                {
+                    tool.Availability = ToolAvailability.Available;
+                }
+                else
+                {
+                    tool.Availability = ToolAvailability.Reserved;
+                }
+                await _toolRepository.UpdateToolAsync(tool);
+            }
+
+            booking.Status = BookingStatus.Cancelled;
+            await _bookingRepository.UpdateAsync(booking);
+            
+            return "Booking cancelled successfully.";
+        }
+
+        public async Task<string> MarkAsPickedUpAsync(int bookingId, string userId)
+        {
+            var booking = await _bookingRepository.GetByIdAsync(bookingId);
+            
+            if (booking == null)
+                return "Booking not found.";
+            
+            if (booking.UserId != userId)
+                return "Unauthorized access to this booking.";
+            
+            if (booking.Status != BookingStatus.Reserved)
+                return $"Cannot pick up booking with status: {booking.Status}";
+            
+            if (DateTime.UtcNow.Date < booking.StartDate.Date)
+                return "Cannot pick up before the booking start date.";
+            
+            booking.ActualPickupDate = DateTime.UtcNow;
+            booking.Status = BookingStatus.InProgress;
+            await _bookingRepository.UpdateAsync(booking);
+            
+            foreach (var tool in booking.Tools)
+            {
+                tool.Availability = ToolAvailability.Rented;
+                await _toolRepository.UpdateToolAsync(tool);
+            }
+            
+            return "Tools picked up successfully.";
+        }
+
+        public async Task<(string? Error, BookingCompletionResult? Result)> CompleteBookingAsync(int bookingId, string userId)
+        {
+            var booking = await _bookingRepository.GetByIdAsync(bookingId);
+            
+            if (booking == null)
+                return ("Booking not found.", null);
+            
+            if (booking.UserId != userId)
+                return ("Unauthorized access to this booking.", null);
+            
+            if (booking.Status != BookingStatus.InProgress)
+                return ($"Cannot return booking with status: {booking.Status}", null);
+            
+            var returnDate = DateTime.UtcNow;
+            var lateFee = CalculateLateFee(booking.EndDate, returnDate, booking.Tools);
+            
+            booking.ActualReturnDate = returnDate;
+            booking.LateFee = lateFee;
+            booking.Status = BookingStatus.Completed;
+            await _bookingRepository.UpdateAsync(booking);
+            
+            foreach (var tool in booking.Tools)
+            {
+                if (tool.Status == ToolStatus.Operational)
+                {
+                    tool.Availability = ToolAvailability.Available;
+                }
+                else
+                {
+                    tool.Availability = ToolAvailability.CurrentlyUnavailable;
+                }
+                await _toolRepository.UpdateToolAsync(tool);
+            }
+            
+            return (null, new BookingCompletionResult
+            {
+                LateFee = lateFee,
+                IsLate = lateFee > 0
+            });
+        }
+
+        private decimal CalculateLateFee(DateTime expectedReturn, DateTime actualReturn, IEnumerable<Tool> tools)
+        {
+            if (actualReturn.Date <= expectedReturn.Date)
+                return 0;
+            
+            var lateDays = (actualReturn.Date - expectedReturn.Date).Days;
+            var dailyRentalCost = tools.Sum(t => t.RentalPricePerDay);
+            
+            return lateDays * dailyRentalCost * 0.5m;
         }
     }
 }
