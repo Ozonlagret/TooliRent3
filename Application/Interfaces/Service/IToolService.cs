@@ -11,9 +11,9 @@ namespace Application.Interfaces.Service
 {
     public interface IToolService
     {
-        Task<IEnumerable<Tool>> GetAvailableToolsAsync(DateTime start, DateTime end);
-        Task<IEnumerable<Tool>> FilterToolsAsync(DTOs.Requests.ToolFilterRequest filterRequest);
-        Task<Tool?> GetToolDetailsAsync(int toolId);
+        Task<IEnumerable<AvailableToolsResponse>> GetAvailableToolsAsync(DateTime start, DateTime end);
+        Task<IEnumerable<ToolResponse>> FilterToolsAsync(ToolFilterRequest filterRequest);
+        Task<ToolResponse?> GetToolDetailsAsync(int toolId);
         Task<bool> SetToolAvailabilityAsync(int bookingId, string status);
         Task<IEnumerable<ToolResponse>> GetAllToolsAsync();
         Task<string> CreateToolAsync(CreateToolRequest request);

@@ -1,4 +1,5 @@
 ﻿using Application.Services;
+using Application.Interfaces.Service;
 using Microsoft.AspNetCore.Mvc;
 using Application.DTOs.Requests;
 using Microsoft.AspNetCore.Authorization;
@@ -9,13 +10,14 @@ namespace Presentation.Controllers
     [Route("[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly AuthService _authService;
+        private readonly IAuthService _authService;
 
-        public AuthController(AuthService authService)
+        public AuthController(IAuthService authService)
         {
             _authService = authService;
         }
 
+        [AllowAnonymous]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDto dto)
         {
@@ -31,6 +33,7 @@ namespace Presentation.Controllers
             });
         }
 
+        [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto dto)
         {
@@ -57,7 +60,7 @@ namespace Presentation.Controllers
             return Ok(new { message = "Logged out successfully." });
         }
 
-        [Authorize(Policy = "ActiveValidUser")]
+        [Authorize]
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest dto)
         {

@@ -11,8 +11,10 @@ namespace Application.Interfaces.Service
 {
     public interface IBookingService
     {
-        Task<(bool Success, string Message, IEnumerable<int> OverlappingToolIds)> BookToolsAsync(BookToolsRequest dto);
-        Task<IEnumerable<Booking>> GetBookingsAsync(string userId);
-
+        Task<(bool Success, string? Message, BookingsWithStatusResponse? Booking, IEnumerable<int>? OverlappingToolIds)> BookToolsAsync(BookToolsRequest dto);
+        Task<IEnumerable<BookingsWithStatusResponse>> GetBookingsAsync(string userId);
+        Task<string> CancelBookingAsync(int bookingId);
+        Task<string> MarkAsPickedUpAsync(int bookingId, string userId);
+        Task<(string? Error, BookingCompletionResult? Result)> CompleteBookingAsync(int bookingId, string userId);
     }
 }

@@ -23,6 +23,7 @@ namespace Presentation.Controllers
             _unitOfWork = unitOfWork;
         }
 
+        [AllowAnonymous]
         [HttpGet("available")]
         public async Task<IActionResult> GetAvailableTools(DateTime start, DateTime end)
         {
@@ -30,6 +31,7 @@ namespace Presentation.Controllers
             return Ok(tools);
         }
 
+        [AllowAnonymous]
         [HttpGet("filter")]
         public async Task<IActionResult> GetFilteredToolsAsync(ToolFilterRequest filterRequest)
         {
@@ -37,6 +39,7 @@ namespace Presentation.Controllers
             return Ok(tools);
         }
 
+        [AllowAnonymous]
         [HttpGet("details/{toolId}")]
         public async Task<IActionResult> GetToolDetails([FromRoute] int toolId)
         {
@@ -115,6 +118,7 @@ namespace Presentation.Controllers
             return Ok(new { message = "Tool deleted successfully" });
         }
 
+        [AllowAnonymous]
         [HttpGet("general-statistics")]
         public async Task<IActionResult> GetGeneralToolStatistics()
         {
@@ -122,6 +126,7 @@ namespace Presentation.Controllers
             return Ok(statistics);
         }
 
+        [AllowAnonymous]
         [HttpGet("usage-statistics")]
         public async Task<IActionResult> GetToolUsageStatistics()
         {

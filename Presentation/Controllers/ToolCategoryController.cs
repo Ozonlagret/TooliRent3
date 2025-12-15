@@ -9,6 +9,7 @@ namespace Presentation.Controllers
 {
     [ApiController]
     [Route("[controller]")]
+    [Authorize(Roles = "Admin")]
     public class ToolCategoryController : ControllerBase
     {
         private readonly ToolCategoryService _toolCategoryService;
@@ -20,7 +21,6 @@ namespace Presentation.Controllers
             _unitOfWork = unitOfWork;
         }
 
-        [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<IActionResult> GetAllCategories()
         {
@@ -28,7 +28,6 @@ namespace Presentation.Controllers
             return Ok(categories);
         }
 
-        [Authorize(Roles = "Admin")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetCategoryById(int id)
         {
@@ -39,7 +38,6 @@ namespace Presentation.Controllers
             return Ok(category);
         }
 
-        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> CreateCategory([FromBody] CreateToolCategoryRequest request)
         {
@@ -49,7 +47,6 @@ namespace Presentation.Controllers
             return Ok(new { message = "Category created successfully." });
         }
 
-        [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateCategory(int id, [FromBody] UpdateToolCategoryRequest request)
         {
@@ -61,7 +58,6 @@ namespace Presentation.Controllers
             return Ok(category);
         }
 
-        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCategory(int id)
         {

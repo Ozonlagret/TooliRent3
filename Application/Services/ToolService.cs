@@ -3,6 +3,7 @@ using Application.DTOs.Responses;
 using Application.Interfaces.Repository;
 using Domain.Enums;
 using Domain.Models;
+using Application.Interfaces.Service;
 using Application.Mappers;
 using System;
 using System.Collections.Generic;
@@ -13,7 +14,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace Application.Services
 {
-    public class ToolService
+    public class ToolService : IToolService
     {
         private IToolRepository _toolRepository;
         private IBookingRepository _bookingRepository;

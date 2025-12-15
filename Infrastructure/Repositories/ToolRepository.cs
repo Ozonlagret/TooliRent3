@@ -63,9 +63,10 @@ namespace Infrastructure.Repositories
             return await query.ToListAsync();
         }
 
-        public async Task UpdateToolAsync(Tool tool)
+        public Task UpdateToolAsync(Tool tool)
         {
             _dbContext.Tools.Update(tool);
+            return Task.CompletedTask;
         }
 
         public async Task<IEnumerable<Tool>> GetAllAsync()
@@ -89,9 +90,10 @@ namespace Infrastructure.Repositories
         }
 
 
-        public async Task DeleteAsync(Tool tool)
+        public Task DeleteAsync(Tool tool)
         {
             _dbContext.Tools.Remove(tool);
+            return Task.CompletedTask;
         }
 
         public async Task<bool> ExistsAsync(int id)

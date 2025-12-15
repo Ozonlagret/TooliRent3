@@ -1,5 +1,6 @@
 ﻿using System;
 using Domain.Enums;
+using Application.Interfaces.Service;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,7 +12,7 @@ using Application.Interfaces.Repository;
 
 namespace Application.Services
 {
-    public class BookingService
+    public class BookingService : IBookingService
     {
         private readonly IBookingRepository _bookingRepository;
         private readonly IToolRepository _toolRepository;

@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Application.Services;
+using Application.Interfaces.Service;
 using Application.Interfaces;
 using Application.DTOs.Requests;
 using Microsoft.AspNetCore.Authorization;
@@ -8,14 +8,14 @@ using System.Security.Claims;
 namespace Presentation.Controllers
 {
     [ApiController]
-    [Route("[Controller]")]
-    [Authorize(Policy = "ActiveValidUser")]
+    [Route("[controller]")]
+    [Authorize]
     public class BookingController : ControllerBase
     {
-        private readonly BookingService _bookingService;
+        private readonly IBookingService _bookingService;
         private readonly IUnitOfWork _unitOfWork;
         
-        public BookingController(BookingService bookingService, IUnitOfWork unitOfWork)
+        public BookingController(IBookingService bookingService, IUnitOfWork unitOfWork)
         {
             _bookingService = bookingService;
             _unitOfWork = unitOfWork;
@@ -26,12 +26,12 @@ namespace Presentation.Controllers
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized();
+                return Unauthorized("Unauthorized");
             var bookings = await _bookingService.GetBookingsAsync(userId);
             return Ok(bookings);
         }
 
-        [HttpGet("{bookingId}")]
+        [HttpGet("{bookingId:int}")]
         public async Task<IActionResult> GetBooking(int bookingId)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -64,7 +64,7 @@ namespace Presentation.Controllers
             return Ok(result.Booking);
         }
 
-        [HttpDelete("{bookingId}")]
+        [HttpDelete("{bookingId:int}/cancel")]
         public async Task<IActionResult> CancelBooking(int bookingId)
         {
             var result = await _bookingService.CancelBookingAsync(bookingId);
@@ -73,7 +73,7 @@ namespace Presentation.Controllers
             return Ok(result);
         }
 
-        [HttpPost("{bookingId}/pickup")]
+        [HttpPost("{bookingId:int}/pickup")]
         public async Task<IActionResult> PickupTools(int bookingId)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -86,7 +86,7 @@ namespace Presentation.Controllers
             return Ok(new { message = result });
         }
 
-        [HttpPost("{bookingId}/return")]
+        [HttpPost("{bookingId:int}/return")]
         public async Task<IActionResult> ReturnTools(int bookingId)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);

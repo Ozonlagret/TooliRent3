@@ -11,5 +11,9 @@ namespace Application.Interfaces.Service
     {
         Task<AuthResponse> RegisterAsync(string userName, string email, string password);
         Task<AuthResponse> LoginAsync(string userName, string password);
+        Task<bool> LogoutAsync(string refreshToken);
+        Task<AuthResponse> RefreshTokenAsync(string refreshToken);
+        Task<bool> DeactivateUserAsync(string userId);
+        Task<bool> ActivateUserAsync(string userId);
     }
 }

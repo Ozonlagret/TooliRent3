@@ -5,10 +5,11 @@ using Domain.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Application.Interfaces.Service;
 
 namespace Application.Services
 {
-    public class ToolCategoryService
+    public class ToolCategoryService : IToolCategoryService
     {
         private readonly IToolCategoryRepository _toolCategoryRepository;
 

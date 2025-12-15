@@ -16,7 +16,7 @@ using Domain.Models;
 
 namespace Application.Services
 {
-    public class AuthService
+    public class AuthService : IAuthService
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IConfiguration _config;

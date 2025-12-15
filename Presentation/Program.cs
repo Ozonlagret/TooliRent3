@@ -15,6 +15,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.OpenApi.Models;
+using System.Transactions;
 
 namespace Presentation
 {
@@ -30,20 +32,59 @@ namespace Presentation
             
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(options =>
+            {
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "Enter your JWT token in the text input below.\n\nExample: \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\""
+                });
+
+                options.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
+            });
 
             // EF Core
             builder.Services.AddDbContext<TooliRentDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
-                .AddEntityFrameworkStores<TooliRentDbContext>()
-                .AddDefaultTokenProviders();
+            builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+            {
+                options.SignIn.RequireConfirmedAccount = false;
+                options.User.RequireUniqueEmail = true;
+                options.Password.RequireDigit = false;
+                options.Password.RequiredLength = 6;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequireUppercase = false;
+                options.Password.RequireLowercase = false;
+            })
+                .AddRoles<IdentityRole>()
+                .AddEntityFrameworkStores<TooliRentDbContext>();
 
 
             // JWT Bearer Authentication
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options =>
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddJwtBearer(options =>
                 {
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
@@ -59,13 +100,13 @@ namespace Presentation
 
             builder.Services.AddAuthorization(options =>
             {
-                options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+                // Require authenticated users by default
+                options.FallbackPolicy = new AuthorizationPolicyBuilder()
+                    .RequireAuthenticatedUser()
+                    .Build();
 
-                options.AddPolicy("ActiveValidUser", policy =>
-                {
-                    policy.RequireClaim(ClaimTypes.NameIdentifier);
-                    policy.AddRequirements(new ActiveUserRequirement());
-                });
+                // Admin role policy (optional, since we use [Authorize(Roles = "Admin")])
+                options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
             });
 
             // Register UnitOfWork
@@ -77,13 +118,13 @@ namespace Presentation
             builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             builder.Services.AddScoped<IToolCategoryRepository, ToolCategoryRepository>();
 
-            // Register Services
-            builder.Services.AddScoped<AuthService>();
-            builder.Services.AddScoped<ToolService>();
-            builder.Services.AddScoped<BookingService>();
-            builder.Services.AddScoped<ToolCategoryService>();
-            // for authorizing active users
-            builder.Services.AddScoped<IAuthorizationHandler, ActiveUserHandler>();
+            // Register Services with their interfaces
+            builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<IToolService, ToolService>();
+            builder.Services.AddScoped<IBookingService, BookingService>();
+            builder.Services.AddScoped<IToolCategoryService, ToolCategoryService>();
+            
+            // Removed custom ActiveUser authorization handler to simplify auth
 
             var app = builder.Build();
 
@@ -100,6 +141,7 @@ namespace Presentation
             app.UseAuthorization();
 
             app.MapControllers();
+
 
             // Seed Data
             using (var scope = app.Services.CreateScope())
@@ -120,3 +162,4 @@ namespace Presentation
         }
     }
 }
+
