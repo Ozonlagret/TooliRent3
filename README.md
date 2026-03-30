@@ -72,6 +72,43 @@ Vid uppstart körs migrationer + seed-data automatiskt via `SeedData.Initialize(
 
 Använd `Authorize`-knappen och skicka JWT som `Bearer <token>`.
 
+## Run locally (Visual Studio 2022)
+
+### Prerequisites
+
+- Visual Studio 2022 with the **ASP.NET and web development** workload
+- .NET 8 SDK
+- SQL Server (LocalDB, SQL Server Express, or full SQL Server)
+
+### Configure app settings
+
+1. In **Solution Explorer**, open `Presentation/appsettings.json`.
+2. Set:
+   - `ConnectionStrings:DefaultConnection`
+   - `Jwt:Key`
+   - `Jwt:Issuer`
+   - `Jwt:Audience`
+
+### Run using Visual Studio buttons (no CLI required)
+
+1. In **Solution Explorer**, right-click the `Presentation` project and click **Set as Startup Project**.
+2. At the top toolbar, select a launch profile (`https`, `http`, or `IIS Express`).
+3. Click the green **Start** button (or press `F5`).
+4. Swagger opens automatically at `/swagger`.
+
+> Migrations and seed data run automatically at startup through `SeedData.Initialize(...)`.
+
+
+### Command-line alternative (kept for convenience)
+
+Från lösningens rot:
+
+```bash
+dotnet restore
+dotnet build
+dotnet run --project Presentation
+```
+
 ## Seed-data (utveckling)
 
 Roller:
@@ -103,43 +140,58 @@ Förskapade användare:
 
 ## Endpoint-översikt
 
-### Auth
+### Public auth endpoints
 
-- `POST /Auth/register`
-- `POST /Auth/login`
-- `POST /Auth/logout`
-- `POST /Auth/refresh-token`
-- `PATCH /Auth/admin/deactivate/{userId}` (Admin)
-- `PATCH /Auth/admin/activate/{userId}` (Admin)
+- `POST /public/auth/register`
+- `POST /public/auth/login`
+- `POST /public/auth/refresh-token`
 
-### Tools
+### Member auth endpoint (requires JWT)
 
-- `GET /Tools/available` (publik)
-- `GET /Tools/filter` (publik)
-- `GET /Tools/details/{toolId}` (publik)
-- `GET /Tools/admin/all` (Admin)
-- `POST /Tools/admin` (Admin)
-- `PUT /Tools/admin/{id}` (Admin)
-- `DELETE /Tools/admin/{id}` (Admin)
-- `GET /Tools/general-statistics` (Admin)
-- `GET /Tools/usage-statistics` (Admin)
+- `POST /member/auth/logout`
 
-### Booking
+### Admin user management endpoints
 
-- `GET /Booking/get-bookings`
-- `GET /Booking/{bookingId}`
-- `POST /Booking/create`
-- `DELETE /Booking/{bookingId}/cancel`
-- `POST /Booking/{bookingId}/pickup`
-- `POST /Booking/{bookingId}/return`
+- `GET /admin/users`
+- `PATCH /admin/users/by-username/{userName}/deactivate`
+- `PATCH /admin/users/by-username/{userName}/activate`
+- `DELETE /admin/users/by-username/{userName}`
 
-### ToolCategory (Admin)
+### Public tool endpoints
 
-- `GET /admin/ToolCategory`
-- `GET /admin/ToolCategory/{id}`
-- `POST /admin/ToolCategory`
-- `PUT /admin/ToolCategory/{id}`
-- `DELETE /admin/ToolCategory/{id}`
+- `GET /public/tools/available?start={startDateTime}&end={endDateTime}`
+- `GET /public/tools/filter` (query params from `ToolFilterRequest`)
+- `GET /public/tools/details/{toolId}`
+
+### Admin tool endpoints
+
+- `GET /admin/tools`
+- `POST /admin/tools`
+- `PUT /admin/tools/{id}`
+- `DELETE /admin/tools/{id}`
+- `GET /admin/tools/statistics/general`
+- `GET /admin/tools/statistics/usage`
+
+### Member booking endpoints (requires JWT)
+
+- `GET /member/bookings`
+- `GET /member/bookings/{bookingId}`
+- `POST /member/bookings`
+- `DELETE /member/bookings/{bookingId}/cancel`
+- `POST /member/bookings/{bookingId}/pickup`
+- `POST /member/bookings/{bookingId}/return`
+
+### Admin booking maintenance endpoint
+
+- `DELETE /admin/bookings/breakGlassInCaseOfEmergency/delete all bookings`
+
+### Admin tool category endpoints
+
+- `GET /admin/tool-categories`
+- `GET /admin/tool-categories/{id}`
+- `POST /admin/tool-categories`
+- `PUT /admin/tool-categories/{id}`
+- `DELETE /admin/tool-categories/{id}`
 
 ## Projektstruktur
 
@@ -150,6 +202,13 @@ TooliRent3/
 ├─ Domain/
 └─ Infrastructure/
 ```
+
+## Local URLs (from current launch settings)
+
+- `https://localhost:7093/swagger`
+- `http://localhost:5115/swagger`
+- `http://localhost:13291/swagger` (IIS Express)
+- `https://localhost:44318/swagger` (IIS Express SSL)
 
 ## Status / notering
 
