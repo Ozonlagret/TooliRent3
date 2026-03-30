@@ -29,4 +29,9 @@
     <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Swagger\" />
+    <Folder Include="wwwroot\swagger\" />
+  </ItemGroup>
+
 </Project>

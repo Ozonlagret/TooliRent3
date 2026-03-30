@@ -28,7 +28,6 @@ namespace Application.Mappers
             }
 
             return new ToolFilter (
-                request.ToolId,
                 request.CategoryId,
                 status,
                 availability
@@ -37,46 +36,49 @@ namespace Application.Mappers
 
         public static Tool ToTool(CreateToolRequest request)
         {
+            var status = string.IsNullOrEmpty(request.ToolStatus)
+                ? ToolStatus.Operational
+                : Enum.Parse<ToolStatus>(request.ToolStatus);
+
+            var requestedAvailability = string.IsNullOrEmpty(request.Availability)
+                ? ToolAvailability.Available
+                : Enum.Parse<ToolAvailability>(request.Availability);
+
             return new Tool
             {
-                Name = request.Name,
-                Description = request.Description,
+                Name = request.Name ?? string.Empty,
+                Description = request.Description ?? string.Empty,
                 RentalPricePerDay = request.RentalPricePerDay,
-                Condition = request.Condition,
+                Condition = request.Condition ?? string.Empty,
                 ToolCategoryId = request.CategoryId,
-                Status = string.IsNullOrEmpty(request.ToolStatus)
-                    ? ToolStatus.Operational
-                    : Enum.Parse<ToolStatus>(request.ToolStatus),
-                Availability = string.IsNullOrEmpty(request.Availability)
-                    ? ToolAvailability.Available
-                    : Enum.Parse<ToolAvailability>(request.Availability)
+                Status = status,
+                Availability = ResolveAvailability(status, requestedAvailability)
             };
         }
 
         public static void UpdateToolFromRequest(Tool tool, UpdateToolRequest request)
         {
-            tool.Name = request.Name;
-            tool.Description = request.Description;
+            tool.Name = request.Name ?? tool.Name;
+            tool.Description = request.Description ?? tool.Description;
             tool.RentalPricePerDay = request.RentalPricePerDay;
-            tool.Condition = request.Condition;
+            tool.Condition = request.Condition ?? tool.Condition;
             tool.ToolCategoryId = request.CategoryId;
 
             if (!string.IsNullOrEmpty(request.ToolStatus))
                 tool.Status = Enum.Parse<ToolStatus>(request.ToolStatus);
 
+            var requestedAvailability = tool.Availability;
             if (!string.IsNullOrEmpty(request.Availability))
             {
-                var newAvailability = Enum.Parse<ToolAvailability>(request.Availability);
-                
-                if (newAvailability == ToolAvailability.Available && tool.Status != ToolStatus.Operational)
-                {
-                    tool.Availability = ToolAvailability.CurrentlyUnavailable;
-                }
-                else
-                {
-                    tool.Availability = newAvailability;
-                }
+                requestedAvailability = Enum.Parse<ToolAvailability>(request.Availability);
             }
+
+            tool.Availability = ResolveAvailability(tool.Status, requestedAvailability);
+        }
+
+        private static ToolAvailability ResolveAvailability(ToolStatus status, ToolAvailability requestedAvailability)
+        {
+            return status == ToolStatus.Operational ? requestedAvailability : ToolAvailability.CurrentlyUnavailable;
         }
     }
 }

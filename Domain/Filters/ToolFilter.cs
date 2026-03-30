@@ -10,14 +10,14 @@ namespace Domain.Filters
     // for use with mappers
     public class ToolFilter
     {
-        public int? ToolId { get; set; }
+        
         public int? CategoryId { get; set; }
         public ToolStatus? Status { get; set; }
         public ToolAvailability? Availability { get; set; }
 
-        public ToolFilter(int? toolId, int? categoryId, ToolStatus? status, ToolAvailability? availability)
+        public ToolFilter(int? categoryId, ToolStatus? status, ToolAvailability? availability)
         {
-            ToolId = toolId;
+            
             CategoryId = categoryId;
             Status = status;
             Availability = availability;

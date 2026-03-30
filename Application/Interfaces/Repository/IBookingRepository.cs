@@ -10,6 +10,7 @@ namespace Application.Interfaces.Repository
         Task AddAsync(Booking booking);
         Task UpdateAsync(Booking booking);
         Task DeleteAsync(Booking booking);
+        Task DeleteAllAsync();
         Task<IEnumerable<Booking>> GetBookingsByUserIdAsync(string userId);
     }
 }

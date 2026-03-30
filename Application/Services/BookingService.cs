@@ -1,10 +1,5 @@
-﻿using System;
-using Domain.Enums;
+﻿using Domain.Enums;
 using Application.Interfaces.Service;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Domain.Models;
 using Application.DTOs.Requests;
 using Application.DTOs.Responses;
@@ -23,8 +18,13 @@ namespace Application.Services
             _toolRepository = toolRepository;
         }
 
-        public async Task<(bool Success, string? Message, BookingsWithStatusResponse? Booking, IEnumerable<int>? OverlappingToolIds)> BookToolsAsync(BookToolsRequest dto)
+        public async Task<(bool Success, string? Message, BookingsWithStatusResponse? Booking, IEnumerable<int>? OverlappingToolIds)> BookToolsAsync(BookToolsRequest dto, string userId)
         {
+            if ((dto.EndDate.Date - dto.StartDate.Date).TotalDays < 1)
+            {
+                return (false, "Booking must span at least 1 full day.", null, null);
+            }
+
             var tools = await _toolRepository.GetToolsByIdsAsync(dto.ToolIds);
 
             var unavailableTools = tools
@@ -40,7 +40,7 @@ namespace Application.Services
 
             var booking = new Booking
             {
-                UserId = dto.UserId,
+                UserId = userId,
                 StartDate = dto.StartDate,
                 EndDate = dto.EndDate,
                 Status = BookingStatus.Reserved,
@@ -83,31 +83,59 @@ namespace Application.Services
             return bookingsWithStatus;
         }
 
-        public async Task<string> CancelBookingAsync(int bookingId)
+        public async Task DeleteAllBookingsAsync()
         {
+            await _bookingRepository.DeleteAllAsync();
+        }
+
+        public async Task<ServiceResult> CancelBookingAsync(int bookingId, string userId, bool isAdmin)
+        {
+            if (bookingId <= 0)
+            {
+                return ServiceResult.Validation("Invalid booking id.");
+            }
+
             var booking = await _bookingRepository.GetByIdAsync(bookingId);
             if (booking == null)
             {
-                return "Booking not found.";
-            }
-            
-            foreach (var tool in booking.Tools)
-            {
-                if (tool.Status == ToolStatus.Operational)
-                {
-                    tool.Availability = ToolAvailability.Available;
-                }
-                else
-                {
-                    tool.Availability = ToolAvailability.Reserved;
-                }
-                await _toolRepository.UpdateToolAsync(tool);
+                return ServiceResult.NotFound("Booking not found.");
             }
 
-            booking.Status = BookingStatus.Cancelled;
-            await _bookingRepository.UpdateAsync(booking);
+            if (!isAdmin && booking.UserId != userId)
+            {
+                return ServiceResult.Forbidden("You cannot cancel another user's booking.");
+            }
+
+            if (booking.Status is BookingStatus.Completed or BookingStatus.Cancelled)
+            {
+                return ServiceResult.Conflict("Booking cannot be cancelled in its current status.");
+            }
             
-            return "Booking cancelled successfully.";
+            try
+            {
+                foreach (var tool in booking.Tools)
+                {
+                    if (tool.Status == ToolStatus.Operational)
+                    {
+                        tool.Availability = ToolAvailability.Available;
+                    }
+                    else
+                    {
+                        tool.Availability = ToolAvailability.Reserved;
+                    }
+                    await _toolRepository.UpdateToolAsync(tool);
+                }
+
+                booking.Status = BookingStatus.Cancelled;
+                await _bookingRepository.UpdateAsync(booking);
+
+                return ServiceResult.Success("Booking cancelled successfully.");
+            }
+            catch
+            {
+                return ServiceResult.Error("An unexpected error occurred while cancelling booking.");
+            }
+            
         }
 
         public async Task<string> MarkAsPickedUpAsync(int bookingId, string userId)

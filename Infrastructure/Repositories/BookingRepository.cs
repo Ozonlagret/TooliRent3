@@ -28,6 +28,12 @@ namespace Infrastructure.Repositories
             await Task.CompletedTask;
         }
 
+        public async Task DeleteAllAsync()
+        {
+            var bookings = await _dbContext.Bookings.ToListAsync();
+            _dbContext.Bookings.RemoveRange(bookings);
+        }
+
         public async Task<Booking?> GetByIdAsync(int id)
         {
             return await _dbContext.Bookings

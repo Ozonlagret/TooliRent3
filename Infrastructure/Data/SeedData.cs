@@ -30,6 +30,9 @@ namespace Infrastructure.Data
             // Seed Tools
             SeedTools(context);
 
+            // Ensure status/availability combinations are valid for all tools
+            NormalizeToolAvailabilityByStatus(context);
+
             // Seed Bookings
             SeedBookings(context, userManager);
 
@@ -51,7 +54,7 @@ namespace Infrastructure.Data
 
         private static void SeedUsers(UserManager<ApplicationUser> userManager)
         {
-            // Admin User
+            // Admin
             if (userManager.FindByNameAsync("admin").Result == null)
             {
                 var admin = new ApplicationUser
@@ -182,7 +185,7 @@ namespace Infrastructure.Data
                         Condition = "Excellent",
                         ToolCategoryId = categories.First(c => c.Name == "Power Tools").Id,
                         Status = ToolStatus.UnderMaintenance,
-                        Availability = ToolAvailability.Available
+                        Availability = ToolAvailability.CurrentlyUnavailable
                     },
 
                     // Hand Tools
@@ -307,6 +310,27 @@ namespace Infrastructure.Data
                 };
 
                 context.Tools.AddRange(tools);
+                context.SaveChanges();
+            }
+        }
+
+        private static void NormalizeToolAvailabilityByStatus(TooliRentDbContext context)
+        {
+            var tools = context.Tools.ToList();
+            var changed = false;
+
+            foreach (var tool in tools)
+            {
+                var isOperational = tool.Status == ToolStatus.Operational;
+                if (!isOperational && tool.Availability != ToolAvailability.CurrentlyUnavailable)
+                {
+                    tool.Availability = ToolAvailability.CurrentlyUnavailable;
+                    changed = true;
+                }
+            }
+
+            if (changed)
+            {
                 context.SaveChanges();
             }
         }

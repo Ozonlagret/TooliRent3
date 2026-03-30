@@ -2,8 +2,6 @@ using Application.Interfaces.Repository;
 using Domain.Models;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Infrastructure.Repositories
 {
@@ -36,14 +34,16 @@ namespace Infrastructure.Repositories
             return category;
         }
 
-        public async Task UpdateAsync(ToolCategory category)
+        public Task UpdateAsync(ToolCategory category)
         {
             _dbContext.ToolCategories.Update(category);
+            return Task.CompletedTask;
         }
 
-        public async Task DeleteAsync(ToolCategory category)
+        public Task DeleteAsync(ToolCategory category)
         {
             _dbContext.ToolCategories.Remove(category);
+            return Task.CompletedTask;
         }
 
         public async Task<bool> ExistsAsync(int id)

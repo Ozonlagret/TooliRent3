@@ -8,10 +8,6 @@ namespace Application.Validators
     {
         public ToolFilterRequestValidator()
         {
-            RuleFor(x => x.ToolId)
-                .GreaterThan(0).When(x => x.ToolId.HasValue)
-                .WithMessage("Tool ID must be greater than 0.");
-
             RuleFor(x => x.CategoryId)
                 .GreaterThan(0).When(x => x.CategoryId.HasValue)
                 .WithMessage("Category ID must be greater than 0.");

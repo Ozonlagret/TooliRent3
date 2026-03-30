@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace Presentation.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("")]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
@@ -18,13 +18,19 @@ namespace Presentation.Controllers
         }
 
         [AllowAnonymous]
-        [HttpPost("register")]
+        [HttpPost("public/auth/register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDto dto)
         {
+            if (string.IsNullOrWhiteSpace(dto.UserName) || string.IsNullOrWhiteSpace(dto.Email) ||
+                string.IsNullOrWhiteSpace(dto.Password))
+            { 
+                return BadRequest(new { message = "UserName, Email, and Password are required." }); 
+            }
+
             var result = await _authService.RegisterAsync(dto.UserName, dto.Email, dto.Password);
 
             if (!result.IsSuccess)
-                return BadRequest(new { errors = result.Errors });
+                return BadRequest(new { message = result.Errors?.FirstOrDefault() ?? "Registration failed." });
 
             return Ok(new
             {
@@ -34,13 +40,17 @@ namespace Presentation.Controllers
         }
 
         [AllowAnonymous]
-        [HttpPost("login")]
+        [HttpPost("public/auth/login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto dto)
         {
+            if (string.IsNullOrWhiteSpace(dto.UserName) || string.IsNullOrWhiteSpace(dto.Password))
+                return BadRequest(new { message = "UserName and Password are required." });
+            
+
             var result = await _authService.LoginAsync(dto.UserName, dto.Password);
 
             if (!result.IsSuccess)
-                return Unauthorized(new { errors = result.Errors });
+                return Unauthorized(new { message = result.Errors?.FirstOrDefault() ?? "Login failed." });
 
             return Ok(new
             {
@@ -50,9 +60,13 @@ namespace Presentation.Controllers
         }
 
         [Authorize]
-        [HttpPost("logout")]
+        [HttpPost("member/auth/logout")]
         public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest dto)
         {
+            if (string.IsNullOrWhiteSpace(dto.RefreshToken))
+                return BadRequest(new { message = "Refresh token is required." });
+            
+
             var success = await _authService.LogoutAsync(dto.RefreshToken);
             if (!success)
                 return BadRequest(new { message = "Invalid refresh token." });
@@ -60,14 +74,17 @@ namespace Presentation.Controllers
             return Ok(new { message = "Logged out successfully." });
         }
 
-        [Authorize]
-        [HttpPost("refresh-token")]
+        [AllowAnonymous]
+        [HttpPost("public/auth/refresh-token")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest dto)
         {
+            if (string.IsNullOrWhiteSpace(dto.RefreshToken))
+                return BadRequest(new { message = "Refresh token is required." });
+
             var result = await _authService.RefreshTokenAsync(dto.RefreshToken);
 
             if (!result.IsSuccess)
-                return Unauthorized(new { errors = result.Errors });
+                return Unauthorized(new { message = result.Errors?.FirstOrDefault() ?? "Refresh token failed." });
 
             return Ok(new
             {
@@ -77,23 +94,46 @@ namespace Presentation.Controllers
         }
 
         [Authorize(Roles = "Admin")]
-        [HttpPatch("deactivate/{userId}")]
-        public async Task<IActionResult> DeactivateUser([FromRoute] string userId)
+        [HttpGet("admin/users")]
+        public async Task<IActionResult> GetUsers()
         {
-            var success = await _authService.DeactivateUserAsync(userId);
+            var users = await _authService.GetUsersAsync();
+            return Ok(users);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPatch("admin/users/by-username/{userName}/deactivate")]
+        public async Task<IActionResult> DeactivateUserByUserName([FromRoute] string userName)
+        {
+            var success = await _authService.DeactivateUserByUserNameAsync(userName);
+
             if (!success)
-                return BadRequest(new { message = "Could not deactivate user." });
+                return NotFound(new { message = "User not found or could not be deactivated." });
+
             return Ok(new { message = "User deactivated successfully." });
         }
 
         [Authorize(Roles = "Admin")]
-        [HttpPatch("activate/{userId}")]
-        public async Task<IActionResult> ActivateUser([FromRoute] string userId)
+        [HttpPatch("admin/users/by-username/{userName}/activate")]
+        public async Task<IActionResult> ActivateUserByUserName([FromRoute] string userName)
         {
-                        var success = await _authService.ActivateUserAsync(userId);
+            var success = await _authService.ActivateUserByUserNameAsync(userName);
             if (!success)
-                return BadRequest(new { message = "Could not activate user." });
+                return NotFound(new { message = "User not found or could not be activated." });
+
             return Ok(new { message = "User activated successfully." });
+        }
+
+
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("admin/users/by-username/{userName}")]
+        public async Task<IActionResult> DeleteUserByUserName([FromRoute] string userName)
+        {
+            var success = await _authService.DeleteUserByUserNameAsync(userName);
+            if (!success)
+                return NotFound(new { message = "User not found or could not be deleted." });
+
+            return Ok(new { message = "User deleted successfully." });
         }
     }
 }

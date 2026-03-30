@@ -1,7 +1,6 @@
 using Application.Interfaces;
 using Application.Interfaces.Repository;
 using Application.Services;
-using Application.Authorization;
 using Domain.Models;
 using Application.Interfaces.Service;
 using FluentValidation;
@@ -29,6 +28,16 @@ namespace Presentation
             // Add services to the container.
 
             builder.Services.AddControllers();
+
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("DevLocalCors", policy =>
+                {
+                    policy.WithOrigins("https://localhost:7093", "http://localhost:5115")
+                          .AllowAnyHeader()
+                          .AllowAnyMethod();
+                });
+            });
             
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
@@ -136,6 +145,8 @@ namespace Presentation
             }
 
             app.UseHttpsRedirection();
+
+            app.UseCors("DevLocalCors");
 
             app.UseAuthentication();
             app.UseAuthorization();

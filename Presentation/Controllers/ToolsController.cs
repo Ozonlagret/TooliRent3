@@ -1,18 +1,13 @@
 ﻿using Application.DTOs.Requests;
-using Application.DTOs.Responses;
 using Application.Interfaces;
 using Application.Interfaces.Service;
-using Application.Services;
-using Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Presentation.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("")]
     public class ToolsController : ControllerBase
     {
         private readonly IToolService _toolService;
@@ -24,7 +19,7 @@ namespace Presentation.Controllers
         }
 
         [AllowAnonymous]
-        [HttpGet("available")]
+        [HttpGet("public/tools/available")]
         public async Task<IActionResult> GetAvailableTools(DateTime start, DateTime end)
         {
             var tools = await _toolService.GetAvailableToolsAsync(start, end);
@@ -32,7 +27,7 @@ namespace Presentation.Controllers
         }
 
         [AllowAnonymous]
-        [HttpGet("filter")]
+        [HttpGet("public/tools/filter")]
         public async Task<IActionResult> GetFilteredToolsAsync(ToolFilterRequest filterRequest)
         {
             var tools = await _toolService.FilterToolsAsync(filterRequest);
@@ -40,42 +35,19 @@ namespace Presentation.Controllers
         }
 
         [AllowAnonymous]
-        [HttpGet("details/{toolId}")]
+        [HttpGet("public/tools/details/{toolId}")]
         public async Task<IActionResult> GetToolDetails([FromRoute] int toolId)
         {
             var toolDetails = await _toolService.GetToolDetailsAsync(toolId);
 
             if (toolDetails == null)
-                return NotFound();
+                return NotFound(new { message = "Tool not found." });
 
             return Ok(toolDetails);
         }
 
-        //[HttpPost("pickup")]
-        //public async Task<IActionResult> PickUpTool([FromBody] int bookingId)
-        //{
-        //    var rented = "Rented";
-        //    var success = await _toolService.SetToolAvailabilityAsync(bookingId, rented);
-        //    if (!success)
-        //        return BadRequest("Could not pick up tool.");
-        //    await _unitOfWork.SaveChangesAsync();
-        //    return Ok("Tool picked up successfully.");
-        //}
-
-        //[HttpPost("return")]
-        //public async Task<IActionResult> ReturnTool([FromBody] int bookingId)
-        //{
-        //    var available = "Available";
-        //    var success = await _toolService.SetToolAvailabilityAsync(bookingId, available);
-        //    if (!success)
-        //        return BadRequest("Could not pick up tool.");
-        //    await _unitOfWork.SaveChangesAsync();
-        //    return Ok("Tool returned up successfully.");
-        //}
-
-        // CRUD
-
-        [HttpGet("all")]
+        // CRUD operations for Admin
+        [HttpGet("admin/tools")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllTools()
         {
@@ -83,7 +55,7 @@ namespace Presentation.Controllers
             return Ok(tools);
         }
 
-        [HttpPost]
+        [HttpPost("admin/tools")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateTool([FromBody] CreateToolRequest request)
         {
@@ -92,7 +64,7 @@ namespace Presentation.Controllers
             return Ok(new { message = result });
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("admin/tools/{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateTool(int id, [FromBody] UpdateToolRequest request)
         {
@@ -105,7 +77,7 @@ namespace Presentation.Controllers
             return Ok(new { message = result });
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("admin/tools/{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteTool(int id)
         {
@@ -118,16 +90,16 @@ namespace Presentation.Controllers
             return Ok(new { message = "Tool deleted successfully" });
         }
 
-        [AllowAnonymous]
-        [HttpGet("general-statistics")]
+        [Authorize(Roles = "Admin")]
+        [HttpGet("admin/tools/statistics/general")]
         public async Task<IActionResult> GetGeneralToolStatistics()
         {
             var statistics = await _toolService.GetGeneralToolStatisticsAsync();
             return Ok(statistics);
         }
 
-        [AllowAnonymous]
-        [HttpGet("usage-statistics")]
+        [Authorize(Roles = "Admin")]
+        [HttpGet("admin/tools/statistics/usage")]
         public async Task<IActionResult> GetToolUsageStatistics()
         {
             var statistics = await _toolService.GetToolUsageStatisticsAsync();

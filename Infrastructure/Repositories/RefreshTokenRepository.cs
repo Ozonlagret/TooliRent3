@@ -1,14 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using Domain.Models;
+﻿using Domain.Models;
 using Application.Interfaces.Repository;
 using Infrastructure.Data;
-using Microsoft.Identity.Client;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories

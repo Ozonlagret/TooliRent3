@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace Presentation.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("admin/tool-categories")]
     [Authorize(Roles = "Admin")]
     public class ToolCategoryController : ControllerBase
     {

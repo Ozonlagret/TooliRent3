@@ -1,14 +1,8 @@
 ﻿using Domain.Models;
 using Domain.Enums;
 using Domain.Filters;
-using Application.DTOs.Requests;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Application.Interfaces.Repository;
 
 namespace Infrastructure.Repositories
@@ -50,9 +44,6 @@ namespace Infrastructure.Repositories
 
             if (filter.CategoryId.HasValue)
                 query = query.Where(tool => tool.ToolCategory.Id == filter.CategoryId);
-
-            if (filter.ToolId.HasValue)
-                query = query.Where(tool => tool.Id == filter.ToolId);
 
             if (filter.Status != null)
                 query = query.Where(tool => tool.Status == filter.Status);
