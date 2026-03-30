@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Application.Interfaces.Service;
+using Application.Mappers;
 
 namespace Application.Services
 {
@@ -21,13 +22,7 @@ namespace Application.Services
         public async Task<IEnumerable<ToolCategoryResponse>> GetAllCategoriesAsync()
         {
             var categories = await _toolCategoryRepository.GetAllAsync();
-            return categories.Select(c => new ToolCategoryResponse
-            {
-                Id = c.Id,
-                Name = c.Name,
-                Description = c.Description,
-                ToolCount = c.Tools?.Count ?? 0
-            });
+            return categories.Select(ToolCategoryMapper.ToResponse).ToList();
         }
 
         public async Task<ToolCategoryResponse?> GetCategoryByIdAsync(int id)
@@ -36,22 +31,12 @@ namespace Application.Services
             if (category == null)
                 return null;
 
-            return new ToolCategoryResponse
-            {
-                Id = category.Id,
-                Name = category.Name,
-                Description = category.Description,
-                ToolCount = category.Tools?.Count ?? 0
-            };
+            return ToolCategoryMapper.ToResponse(category);
         }
 
         public async Task CreateCategoryAsync(CreateToolCategoryRequest request)
         {
-            var category = new ToolCategory
-            {
-                Name = request.Name,
-                Description = request.Description
-            };
+            var category = ToolCategoryMapper.ToEntity(request);
 
             await _toolCategoryRepository.AddAsync(category);
         }
@@ -62,8 +47,7 @@ namespace Application.Services
             if (category == null)
                 return "category not found";
 
-            category.Name = request.Name;
-            category.Description = request.Description;
+            ToolCategoryMapper.ApplyUpdate(category, request);
 
             await _toolCategoryRepository.UpdateAsync(category);
 

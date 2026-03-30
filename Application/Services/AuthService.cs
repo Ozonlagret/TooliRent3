@@ -8,6 +8,7 @@ using System.Text;
 using Application.DTOs.Responses;
 using Application.Interfaces.Service;
 using Application.Interfaces.Repository;
+using Application.Mappers;
 using Domain.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -243,16 +244,9 @@ namespace Application.Services
         {
             var users = await _userManager.Users
                 .OrderBy(user => user.UserName)
-                .Select(user => new AdminUserSummaryResponse
-                {
-                    Id = user.Id,
-                    UserName = user.UserName ?? string.Empty,
-                    Email = user.Email ?? string.Empty,
-                    IsActive = user.IsActive
-                })
                 .ToListAsync();
 
-            return users;
+            return users.Select(UserMapper.ToAdminSummary).ToList();
         }
     }
 }

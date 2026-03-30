@@ -30,19 +30,7 @@ namespace Application.Services
         {
             var tools = await _toolRepository.GetAvailableToolsAsync(start, end);    
 
-            var results = tools.Select(t => new AvailableToolsResponse
-            {
-                Id = t.Id,
-                Name = t.Name,
-                Description = t.Description,
-                RentalPricePerDay = t.RentalPricePerDay,
-                ToolCategoryId = t.ToolCategoryId,
-                ToolCategoryName = t.ToolCategory != null ? t.ToolCategory.Name : null,
-                Status = t.Status.ToString(),
-            }).ToList();
-
-
-            return results;
+            return tools.Select(ToolResponseMapper.ToAvailableToolsResponse).ToList();
         }
 
         // Filtrera verktyg efter kategori, status, tillgänglighet
@@ -52,17 +40,7 @@ namespace Application.Services
 
             var tools = await _toolRepository.FilterToolsAsync(filter);
 
-            return tools.Select(tool => new ToolResponse
-            {
-                Id = tool.Id,
-                Name = tool.Name,
-                Description = tool.Description,
-                RentalPricePerDay = tool.RentalPricePerDay,
-                Condition = tool.Condition,
-                Status = tool.Status.ToString(),
-                Availability = tool.Availability.ToString(),
-                Category = tool.ToolCategory != null ? tool.ToolCategory.Name : null
-            });
+            return tools.Select(ToolResponseMapper.ToToolResponse).ToList();
         }
 
         // Visa detaljerad information om specifika verktyg
@@ -73,17 +51,7 @@ namespace Application.Services
             if (tool == null)
                 return null;
 
-            return (new ToolResponse
-            {
-                Id = tool.Id,
-                Name = tool.Name,
-                Description = tool.Description,
-                RentalPricePerDay = tool.RentalPricePerDay,
-                Condition = tool.Condition,
-                Status = tool.Status.ToString(),
-                Availability = tool.Availability.ToString(),
-                Category = tool.ToolCategory != null ? tool.ToolCategory.Name : null
-            });
+            return ToolResponseMapper.ToToolResponse(tool);
         }
 
         // Markera att verktyget har hämtats ut/återlämnats
@@ -108,17 +76,7 @@ namespace Application.Services
         {
             var tools = await _toolRepository.GetAllAsync();
 
-            return tools.Select(tool => new ToolResponse
-            {
-                Id = tool.Id,
-                Name = tool.Name,
-                Description = tool.Description,
-                RentalPricePerDay = tool.RentalPricePerDay,
-                Condition = tool.Condition,
-                Status = tool.Status.ToString(),
-                Availability = tool.Availability.ToString(),
-                Category = tool.ToolCategory != null ? tool.ToolCategory.Name : null
-            });
+            return tools.Select(ToolResponseMapper.ToToolResponse).ToList();
         }
 
         // CRUD - Create

@@ -3,6 +3,7 @@ using Application.Interfaces.Service;
 using Domain.Models;
 using Application.DTOs.Requests;
 using Application.DTOs.Responses;
+using Application.Mappers;
 using Application.Interfaces.Repository;
 
 namespace Application.Services
@@ -55,14 +56,7 @@ namespace Application.Services
                 await _toolRepository.UpdateToolAsync(tool);
             }
 
-            var response = new BookingsWithStatusResponse
-            {
-                BookingId = booking.Id,
-                Status = "Reserved",
-                from = booking.StartDate,
-                to = booking.EndDate,
-                Tools = tools.Select(t => t.Name).ToArray()
-            };
+            var response = BookingMapper.ToBookingsWithStatusResponse(booking);
 
             return (true, "Booking successful.", response, null);
         }
@@ -71,16 +65,7 @@ namespace Application.Services
         {
             var bookings = await _bookingRepository.GetBookingsByUserIdAsync(userId);
 
-            var bookingsWithStatus = bookings.Select(b => new BookingsWithStatusResponse
-            {
-                BookingId = b.Id,
-                Status = b.Status.ToString(),
-                from = b.StartDate,
-                to = b.EndDate,
-                Tools = b.Tools.Select(t => t.Name).ToArray()
-            });
-
-            return bookingsWithStatus;
+            return bookings.Select(BookingMapper.ToBookingsWithStatusResponse).ToList();
         }
 
         public async Task DeleteAllBookingsAsync()
